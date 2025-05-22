@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Números de Bingo con Jugadores</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif; /* Changed font family */
+            background-color: #F5E9B3; /* Light Yellow/Cream */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .main-container {
+            display: flex;
+            flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-start; /* Alinea los elementos en la parte superior */
+            max-width: 1400px; /* Ancho máximo para todo el diseño */
+            width: 100%;
+        }
+        .controls-container, .player-management-container {
+            background-color: #ffffff; /* Keeping white for contrast, or could use a very light #F5E9B3 */
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            flex-shrink: 0; /* Evita que se encoja */
+        }
+        .bingo-board-container {
+            background-color: #ffffff; /* Keeping white for contrast */
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 700px; /* Mayor ancho para el tablero completo */
+            width: 100%;
+            flex-grow: 1; /* Permite que crezca para llenar el espacio */
+        }
+
+        .number-display {
+            font-size: 5rem;
+            font-weight: 800; /* Adjusted font weight for Montserrat */
+            color: #F28D07; /* Darker Orange */
+            margin-bottom: 20px;
+            min-height: 100px; /* Asegura espacio incluso cuando no hay número sorteado */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #F2C707; /* Orange/Yellowish slightly darker */
+            border-radius: 8px;
+            background-color: #F5E9B3; /* Light Yellow/Cream */
+        }
+        .drawn-numbers-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #F2C707; /* Orange/Yellowish slightly darker */
+            border-radius: 8px;
+            background-color: #F5E9B3; /* Light Yellow/Cream */
+        }
+        .drawn-number-item {
+            background-color: #F2AB07; /* Orange/Yellowish */
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600; /* Adjusted font weight for Montserrat */
+        }
+        .button-style {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: 700; /* Adjusted font weight for Montserrat */
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .draw-button {
+            background-color: #F28D07; /* Darker Orange */
+            color: white;
+            border: none;
+        }
+        .draw-button:hover {
+            background-color: #F2AB07; /* Orange/Yellowish */
+            transform: translateY(-2px);
+        }
+        .draw-button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .reset-button {
+            background-color: #F2C707; /* Orange/Yellowish slightly darker */
+            color: white;
+            border: none;
+            margin-top: 10px;
+        }
+        .reset-button:hover {
+            background-color: #F2AB07; /* Orange/Yellowish */
+            transform: translateY(-2px);
+        }
+        .reset-button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .message-box {
+            background-color: #F2E407; /* Yellow */
+            color: #F28D07; /* Darker Orange for text */
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 1rem;
+            font-weight: 600; /* Adjusted font weight for Montserrat */
+            border: 1px solid #F2C707; /* Orange/Yellowish slightly darker */
+            display: none; /* Oculto por defecto */
+        }
+
+        /* Bingo Board Specific Styles (Dashboard) */
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 5 columnas para B, I, N, G, O */
+            gap: 10px; /* Espacio entre columnas */
+            border: 3px solid #F28D07; /* Darker Orange */
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #F5E9B3; /* Light Yellow/Cream */
+        }
+        .bingo-column { /* Nueva clase para cada columna de números */
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: center;
+            background-color: #F5E9B3; /* Light Yellow/Cream */
+            border-radius: 6px;
+            padding: 10px 5px;
+        }
+        .bingo-header-cell {
+            background-color: #F28D07; /* Darker Orange */
+            color: white;
+            font-weight: 700; /* Adjusted font weight for Montserrat */
+            padding: 8px 5px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3rem; /* Encabezados ligeramente más grandes */
+            margin-bottom: 5px; /* Espacio debajo del encabezado */
+            width: 100%; /* Hace que el encabezado ocupe todo el ancho de la columna */
+        }
+        .bingo-cell {
+            background-color: #ffffff; /* Keeping white for contrast */
+            color: #333; /* Dark gray for numbers */
+            padding: 8px 5px; /* Menor padding para más números */
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem; /* Fuente más pequeña para más números */
+            font-weight: 600; /* Adjusted font weight for Montserrat */
+            border: 1px solid #F2C707; /* Orange/Yellowish slightly darker */
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            width: 100%; /* Hace que la celda ocupe todo el ancho de la columna */
+            box-sizing: border-box; /* Incluye padding y borde en el ancho */
+        }
+        .bingo-cell.marked {
+            background-color: #C3F207; /* Lime Green */
+            color: #333; /* Dark text for better contrast on green */
+            transform: scale(1.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Player Management Specific Styles */
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #F5E9B3; /* Light Yellow/Cream */
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            font-weight: 600; /* Adjusted font weight for Montserrat */
+            color: #F28D07; /* Darker Orange */
+        }
+        .player-item:last-child {
+            margin-bottom: 0;
+        }
+        .player-score {
+            font-weight: 700; /* Adjusted font weight for Montserrat */
+            color: #F28D07; /* Darker Orange */
+            margin-left: 10px;
+        }
+        .player-buttons {
+            display: flex;
+            gap: 5px; /* Espacio entre los botones de punto */
+        }
+        .award-point-button {
+            background-color: #C3F207; /* Lime Green */
+            color: #333; /* Dark text for better contrast on green */
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 0.9rem;
+            border: none;
+            font-weight: 600; /* Adjusted font weight for Montserrat */
+        }
+        .award-point-button:hover {
+            background-color: #AACC00; /* Slightly darker lime green */
+        }
+        .award-point-button:active {
+            transform: translateY(1px);
+        }
+        .subtract-point-button { /* Nuevo estilo para el botón de restar punto */
+            background-color: #F2AB07; /* Orange/Yellowish */
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 0.9rem;
+            border: none;
+            font-weight: 600; /* Adjusted font weight for Montserrat */
+        }
+        .subtract-point-button:hover {
+            background-color: #D99A06; /* Slightly darker orange */
+        }
+        .subtract-point-button:active {
+            transform: translateY(1px);
+        }
+        .player-name-score {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .controls-container, .player-management-container, .bingo-board-container {
+                max-width: 100%;
+            }
+        }
+        @media (max-width: 768px) {
+            .number-display {
+                font-size: 4rem;
+            }
+            .bingo-cell {
+                font-size: 1rem; /* Aún más pequeña para móviles */
+                padding: 6px 4px;
+            }
+            .bingo-header-cell {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="controls-container">
+            <h1 class="text-3xl font-extrabold text-gray-800 mb-6">Bingo: ¡Saca un Número!</h1>
+
+            <div id="numberDisplay" class="number-display">
+                --
+            </div>
+
+            <button id="drawButton" class="button-style draw-button w-full">
+                Sacar Número
+            </button>
+            <button id="resetButton" class="button-style reset-button w-full">
+                Reiniciar Juego
+            </button>
+
+            <div id="messageBox" class="message-box"></div>
+
+            <h2 class="text-xl font-semibold text-gray-700 mt-8 mb-4">Números Salidos:</h2>
+            <div id="drawnNumbersList" class="drawn-numbers-list">
+                </div>
+        </div>
+
+        <div class="player-management-container">
+            <h2 class="text-2xl font-extrabold text-gray-800 mb-4 text-center">Gestión de Jugadores</h2>
+            <div class="mb-4 flex flex-col sm:flex-row gap-2">
+                <input type="text" id="playerNameInput" placeholder="Nombre del Jugador" class="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="addPlayerButton" class="button-style draw-button px-4 py-2 text-base">
+                    Añadir
+                </button>
+            </div>
+            <div id="playersList" class="bg-gray-50 p-4 rounded-lg border border-gray-200 max-h-60 overflow-y-auto">
+                <p class="text-gray-500 text-center" id="noPlayersMessage">No hay jugadores aún.</p>
+            </div>
+        </div>
+
+        <div class="bingo-board-container">
+            <h2 class="text-2xl font-extrabold text-gray-800 mb-4 text-center">Tablero de Control de Bingo</h2>
+            <div id="bingoBoard" class="bingo-grid">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // Obtener referencias a los elementos del DOM
+        const numberDisplay = document.getElementById('numberDisplay');
+        const drawButton = document.getElementById('drawButton');
+        const resetButton = document.getElementById('resetButton');
+        const drawnNumbersList = document.getElementById('drawnNumbersList');
+        const messageBox = document.getElementById('messageBox');
+        const bingoBoardElement = document.getElementById('bingoBoard');
+
+        const playerNameInput = document.getElementById('playerNameInput');
+        const addPlayerButton = document.getElementById('addPlayerButton');
+        const playersListElement = document.getElementById('playersList');
+        const noPlayersMessage = document.getElementById('noPlayersMessage');
+
+        let availableNumbers = []; // Array para los números disponibles para sacar
+        let drawnNumbers = [];    // Array para los números ya salidos
+        let players = [];         // Array para almacenar los jugadores y sus puntuaciones
+
+        /**
+         * Genera la estructura de datos para el tablero de bingo completo (1-75).
+         * Organiza los números por las columnas de bingo (B: 1-15, I: 16-30, etc.).
+         * @returns {Object} - Un objeto con las columnas de bingo y sus números.
+         */
+        function generateBingoBoardData() {
+            const boardData = {
+                'B': [], 'I': [], 'N': [], 'G': [], 'O': []
+            };
+
+            for (let i = 1; i <= 75; i++) {
+                if (i >= 1 && i <= 15) {
+                    boardData['B'].push(i);
+                } else if (i >= 16 && i <= 30) {
+                    boardData['I'].push(i);
+                } else if (i >= 31 && i <= 45) {
+                    boardData['N'].push(i);
+                } else if (i >= 46 && i <= 60) {
+                    boardData['G'].push(i);
+                } else if (i >= 61 && i <= 75) {
+                    boardData['O'].push(i);
+                }
+            }
+            return boardData;
+        }
+
+        /**
+         * Renderiza el tablero de bingo completo (1-75) en el DOM.
+         */
+        function renderBingoBoard() {
+            bingoBoardElement.innerHTML = ''; // Limpia el tablero existente
+
+            const boardData = generateBingoBoardData();
+            const columnKeys = ['B', 'I', 'N', 'G', 'O'];
+
+            columnKeys.forEach(key => {
+                const columnContainer = document.createElement('div');
+                columnContainer.classList.add('bingo-column');
+
+                const headerCell = document.createElement('div');
+                headerCell.classList.add('bingo-header-cell');
+                headerCell.textContent = key;
+                columnContainer.appendChild(headerCell);
+
+                boardData[key].forEach(number => {
+                    const cell = document.createElement('div');
+                    cell.classList.add('bingo-cell');
+                    cell.textContent = number;
+                    cell.id = `bingo-cell-${number}`; // Añade un ID para fácil marcado
+                    columnContainer.appendChild(cell);
+                });
+                bingoBoardElement.appendChild(columnContainer);
+            });
+        }
+
+        /**
+         * Marca un número en el tablero de bingo si existe.
+         * @param {number} numberToMark - El número que se ha sacado.
+         */
+        function markNumberOnBoard(numberToMark) {
+            const cellToMark = document.getElementById(`bingo-cell-${numberToMark}`);
+            if (cellToMark && !cellToMark.classList.contains('marked')) {
+                cellToMark.classList.add('marked');
+            }
+        }
+
+        /**
+         * Desmarca todos los números en el tablero.
+         */
+        function unmarkAllNumbersOnBoard() {
+            const markedCells = bingoBoardElement.querySelectorAll('.bingo-cell.marked');
+            markedCells.forEach(cell => {
+                cell.classList.remove('marked');
+            });
+        }
+
+        /**
+         * Añade un nuevo jugador a la lista.
+         */
+        function addPlayer() {
+            const playerName = playerNameInput.value.trim();
+            if (playerName && !players.some(p => p.name.toLowerCase() === playerName.toLowerCase())) {
+                players.push({ name: playerName, score: 0 });
+                playerNameInput.value = ''; // Limpia el input
+                renderPlayers(); // Actualiza la lista de jugadores
+            } else if (playerName) {
+                showMessageBox('El jugador "' + playerName + '" ya existe.', 'warning');
+            } else {
+                showMessageBox('Por favor, introduce un nombre para el jugador.', 'warning');
+            }
+        }
+
+        /**
+         * Otorga un punto a un jugador específico.
+         * @param {string} playerName - El nombre del jugador al que se le otorgará el punto.
+         */
+        function awardPoint(playerName) {
+            const player = players.find(p => p.name === playerName);
+            if (player) {
+                player.score++;
+                renderPlayers(); // Actualiza la lista para mostrar la nueva puntuación
+                showMessageBox('¡Punto otorgado a ' + playerName + '! Total: ' + player.score, 'info');
+            }
+        }
+
+        /**
+         * Resta un punto a un jugador específico, asegurándose de que la puntuación no sea negativa.
+         * @param {string} playerName - El nombre del jugador al que se le restará el punto.
+         */
+        function subtractPoint(playerName) {
+            const player = players.find(p => p.name === playerName);
+            if (player && player.score > 0) {
+                player.score--;
+                renderPlayers(); // Actualiza la lista para mostrar la nueva puntuación
+                showMessageBox('Punto restado a ' + playerName + '. Total: ' + player.score, 'info');
+            } else if (player && player.score === 0) {
+                showMessageBox(playerName + ' ya tiene 0 puntos.', 'warning');
+            }
+        }
+
+        /**
+         * Renderiza la lista de jugadores en el DOM.
+         */
+        function renderPlayers() {
+            playersListElement.innerHTML = ''; // Limpia la lista actual
+
+            if (players.length === 0) {
+                noPlayersMessage.style.display = 'block'; // Muestra el mensaje si no hay jugadores
+            } else {
+                noPlayersMessage.style.display = 'none'; // Oculta el mensaje
+                players.forEach(player => {
+                    const playerItem = document.createElement('div');
+                    playerItem.classList.add('player-item');
+                    playerItem.innerHTML = `
+                        <div class="player-name-score">
+                            <span>${player.name}:</span>
+                            <span class="player-score">${player.score}</span>
+                        </div>
+                        <div class="player-buttons">
+                            <button class="award-point-button" data-player-name="${player.name}">
+                                +1 Punto
+                            </button>
+                            <button class="subtract-point-button" data-player-name="${player.name}">
+                                -1 Punto
+                            </button>
+                        </div>
+                    `;
+                    playersListElement.appendChild(playerItem);
+
+                    // Añadir event listener al botón de +1 Punto
+                    playerItem.querySelector('.award-point-button').addEventListener('click', (event) => {
+                        awardPoint(event.target.dataset.playerName);
+                    });
+                    // Añadir event listener al botón de -1 Punto
+                    playerItem.querySelector('.subtract-point-button').addEventListener('click', (event) => {
+                        subtractPoint(event.target.dataset.playerName);
+                    });
+                });
+            }
+        }
+
+        /**
+         * Inicializa o reinicia el juego de bingo (tablero y números sacados).
+         * Las puntuaciones de los jugadores no se reinician.
+         */
+        function initializeGame() {
+            availableNumbers = Array.from({ length: 75 }, (_, i) => i + 1); // Números del 1 al 75
+            drawnNumbers = [];
+            numberDisplay.textContent = '--'; // Reinicia la visualización del número
+            drawnNumbersList.innerHTML = ''; // Limpia la lista de números salidos
+            drawButton.disabled = false; // Habilita el botón de sacar número
+            hideMessageBox(); // Oculta cualquier mensaje
+
+            // Renderiza el tablero de bingo completo y desmarca todos los números
+            renderBingoBoard();
+            unmarkAllNumbersOnBoard(); // Asegura que no haya números marcados al reiniciar
+        }
+
+        /**
+         * Muestra un mensaje en la caja de mensajes.
+         * @param {string} message - El mensaje a mostrar.
+         * @param {string} type - El tipo de mensaje (e.g., 'warning', 'info').
+         */
+        function showMessageBox(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            if (type === 'warning') {
+                messageBox.style.backgroundColor = '#F2E407'; /* Yellow */
+                messageBox.style.borderColor = '#F2C707'; /* Orange/Yellowish slightly darker */
+                messageBox.style.color = '#F28D07'; /* Darker Orange */
+            } else {
+                messageBox.style.backgroundColor = '#F5E9B3'; /* Light Yellow/Cream */
+                messageBox.style.borderColor = '#F2C707'; /* Orange/Yellowish slightly darker */
+                messageBox.style.color = '#F28D07'; /* Darker Orange */
+            }
+        }
+
+        /**
+         * Oculta la caja de mensajes.
+         */
+        function hideMessageBox() {
+            messageBox.style.display = 'none';
+        }
+
+        /**
+         * Saca un número aleatorio del array de números disponibles.
+         */
+        function drawNumber() {
+            if (availableNumbers.length === 0) {
+                numberDisplay.textContent = '¡Fin!';
+                drawButton.disabled = true; // Deshabilita el botón si no hay más números
+                showMessageBox('¡Todos los números han sido sacados! Reinicia el juego para volver a jugar.', 'warning');
+                return;
+            }
+
+            hideMessageBox(); // Oculta el mensaje si se está sacando un nuevo número
+
+            // Genera un índice aleatorio
+            const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+            // Obtiene el número aleatorio
+            const drawn = availableNumbers[randomIndex];
+
+            // Elimina el número del array de disponibles
+            availableNumbers.splice(randomIndex, 1);
+
+            // Añade el número al array de salidos
+            drawnNumbers.push(drawn);
+            // Ordena los números salidos para una mejor visualización
+            drawnNumbers.sort((a, b) => a - b);
+
+            // Actualiza la visualización del número actual
+            numberDisplay.textContent = drawn;
+
+            // Actualiza la lista de números salidos
+            updateDrawnNumbersList();
+
+            // Marca el número en el tablero de bingo
+            markNumberOnBoard(drawn);
+        }
+
+        /**
+         * Actualiza la lista de números que ya han salido en el DOM.
+         */
+        function updateDrawnNumbersList() {
+            drawnNumbersList.innerHTML = ''; // Limpia la lista actual
+            drawnNumbers.forEach(number => {
+                const numberItem = document.createElement('span');
+                numberItem.classList.add('drawn-number-item');
+                numberItem.textContent = number;
+                drawnNumbersList.appendChild(numberItem);
+            });
+        }
+
+        // Event Listeners
+        drawButton.addEventListener('click', drawNumber);
+        resetButton.addEventListener('click', initializeGame);
+        addPlayerButton.addEventListener('click', addPlayer);
+        // Permite añadir jugador con la tecla Enter
+        playerNameInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                addPlayer();
+            }
+        });
+
+        // Inicializa el juego y renderiza los jugadores cuando la página carga
+        window.onload = () => {
+            initializeGame();
+            renderPlayers(); // Renderiza la lista de jugadores al cargar
+        };
+    </script>
+</body>
+</html>
